@@ -1,0 +1,49 @@
+<!-- Отображение публичных записей -->
+{% extends "base6.html" %}
+
+{% block content %}
+
+<div class="container">
+    <h2>Менеджер Паролей</h2> 
+</div>
+
+<div class="container">
+    <form method="POST" action="/add">
+        <input type="email" name="email" placeholder="Почта" class="form-control">
+        <br>
+        <input type="text" name="site_URL" placeholder="Адрес Сайта" class="form-control">
+        <br>
+	  <input type="password" name="site_password" placeholder="Пароль" class="form-control">
+
+        <br>
+        <button class="btn btn outline-primary">Добавить пароль</button>
+    </form>
+</div>
+
+<hr>
+<div class="container">
+    <!-- Для удаления, изменения, скрыть (отдельный шаблон для изменения) -->
+    {% for item in passwordlist %}
+    {{ item.email }}
+    {{ item.site_url }}
+    <input type="password" value="{{ item.site_password }}" id="{{ item.id }}" />
+    <a href="/delete/{{item.id}}" class="btn btn-outline-danger"> Удалить </a>
+    <a href="/update/{{item.id}}" class="btn btn-outline-success"> Изменить </a>
+
+    <button onclick="myFunction({{ item.id }})" class="btn btn-outline-primary"> Скрыть </button>  
+    {% endfor %}
+</div>
+
+<!-- Для того чтобы поменять значение type с password на текст и наоборот по id pid(но это временно) -->
+<script type="text/javascript">
+    function myFunction(pid){
+        var x = document.getElementById(pid);
+        if (x.type === "password"){
+            x.type = "text";
+        }else{
+            x.type = "password";
+        }
+    }
+ </script>
+
+{% endblock %}
