@@ -1,4 +1,4 @@
-from flask import Flask, url_for, render_template, redirect, make_response, request, session, abort
+from flask import Flask, url_for, render_template, redirect, make_response, request, session, abort, send_file
 from data_ORM import db_session
 from data_ORM.users import User
 from data_ORM.passwords import Password
@@ -7,14 +7,14 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from forms_ORM.user2 import LoginForm
 from forms_ORM.user import RegisterForm
 from forms_ORM.passwords import PasswordForm
+import csv
+import time
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 
 login_manager = LoginManager()
 login_manager.init_app(app)
-
-
 
 '''Для верной работы flask-login у нас должна быть функция
  для получения пользователя, украшенная декоратором login_manager.user_loader.
@@ -67,12 +67,15 @@ def login():
 def index():
     db_sess = db_session.create_session()
     # news = db_sess.query(News).filter(News.is_private != False)
-    #if current_user.is_authenticated:
-        #news = db_sess.query(News).filter(
-            #(News.user == current_user) | (News.is_private != True))
-    #else:
-    #news = db_sess.query(News).filter(News.is_private != True)
-    news = db_sess.query(Password).all()
+    # if current_user.is_authenticated:
+    # news = db_sess.query(News).filter(
+    # (News.user == current_user) | (News.is_private != True))
+    # else:
+    # news = db_sess.query(News).filter(News.is_private != True)
+    if current_user.is_authenticated:
+        news = db_sess.query(Password).filter(Password.user == current_user)
+    else:
+        news = db_sess.query(Password).filter(Password.is_private == False)
     return render_template("index_ORM.html", news=news)
 
 
@@ -108,8 +111,8 @@ def edit_news(id):
     if request.method == "GET":
         db_sess = db_session.create_session()
         news = db_sess.query(Password).filter(Password.id == id,
-                                          Password.user == current_user
-                                          ).first()
+                                              Password.user == current_user
+                                              ).first()
         if news:
             form.email.data = news.email
             form.site_url.data = news.site_url
@@ -119,8 +122,8 @@ def edit_news(id):
     if form.validate_on_submit():
         db_sess = db_session.create_session()
         news = db_sess.query(Password).filter(Password.id == id,
-                                          Password.user == current_user
-                                          ).first()
+                                              Password.user == current_user
+                                              ).first()
         if news:
             news.email = form.email.data
             news.site_url = form.site_url.data
@@ -150,8 +153,8 @@ def edit_news(id):
 def news_delete(id):
     db_sess = db_session.create_session()
     news = db_sess.query(Password).filter(Password.id == id,
-                                      Password.user == current_user
-                                      ).first()
+                                          Password.user == current_user
+                                          ).first()
     if news:
         db_sess.delete(news)
         db_sess.commit()
@@ -161,6 +164,7 @@ def news_delete(id):
 
 
 '''Добавим еще обработчик удаления записи. Он сверху'''
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def reqister():
@@ -185,6 +189,21 @@ def reqister():
         db_sess.commit()
         return redirect('/login')
     return render_template('register_ORM.html', title='Регистрация', form=form)
+
+
+@app.route('/export')
+def export_data():
+    db_sess = db_session.create_session()
+    with open('save.csv', 'w') as f:
+        out = csv.writer(f)
+        out.writerow(['id', 'email', 'site_url', 'site_password'])
+        for item in db_sess.query(Password).all():
+            out.writerow([item.id, item.email, item.site_url, item.site_password])
+    return send_file('save.csv',
+                     mimetype='text/csv',
+                     download_name=f"Экспортированный_Пароль_{datetime.datetime.now()}.csv",
+                     as_attachment=True)
+
 
 if __name__ == '__main__':
     main()
