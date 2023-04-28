@@ -197,7 +197,7 @@ def export_data():
     with open('save.csv', 'w') as f:
         out = csv.writer(f)
         out.writerow(['id', 'email', 'site_url', 'site_password'])
-        for item in db_sess.query(Password).all():
+        for item in db_sess.query(Password).filter(Password.user == current_user):
             out.writerow([item.id, item.email, item.site_url, item.site_password])
     return send_file('save.csv',
                      mimetype='text/csv',
